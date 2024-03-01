@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:geo_attendance/core/utils/geo_locator.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart';
 
@@ -15,17 +18,30 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
-  late final animatedMapController = AnimatedMapController(
+  final zoomLevel = 16.0;
+  late final _animatedMapController = AnimatedMapController(
     vsync: this,
     duration: const Duration(milliseconds: 500),
     curve: Curves.easeInOut,
   );
   LatLng _myLocation = const LatLng(0, 0);
+  List<LatLng> _locationsTrack = [];
+  late StreamSubscription<Position> _positionStream;
 
   @override
   void initState() {
     super.initState();
     setMyLocation();
+    _positionStream =
+        getStreamPositionSubscription(onUpdatePosition: (position) {
+      // print(position == null
+      //     ? 'Unknown'
+      //     : '${position.latitude.toString()}, ${position.longitude.toString()}');
+
+      if (position != null) {
+        updateMyLocation(position);
+      }
+    });
   }
 
   void setMyLocation() async {
@@ -33,7 +49,16 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     setState(() {
       _myLocation = LatLng(currentLocation.latitude, currentLocation.longitude);
     });
-    animatedMapController.animateTo(dest: _myLocation, zoom: 14);
+    _animatedMapController.animateTo(dest: _myLocation, zoom: zoomLevel);
+  }
+
+  void updateMyLocation(Position position) {
+    final newLocation = LatLng(position.latitude, position.longitude);
+    setState(() {
+      _myLocation = newLocation;
+      _locationsTrack = [..._locationsTrack, newLocation];
+    });
+    _animatedMapController.animateTo(dest: _myLocation, zoom: zoomLevel);
   }
 
   @override
@@ -48,10 +73,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       ),
       body: Stack(children: [
         FlutterMap(
-          mapController: animatedMapController.mapController,
+          mapController: _animatedMapController.mapController,
           options: MapOptions(
             initialCenter: const LatLng(51.5, -0.09),
-            initialZoom: 18,
+            initialZoom: zoomLevel,
             cameraConstraint: CameraConstraint.contain(
               bounds: LatLngBounds(
                 const LatLng(-90, -180),
@@ -62,26 +87,43 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=${dotenv.env['MAP_API_KEY']}',
+                  // 'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}@2x.png?key=${dotenv.env['MAP_API_KEY']}'
+                  'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${dotenv.env['MAP_API_KEY']}',
               userAgentPackageName: 'dev.fleaflet.flutter_map.example',
             ),
             const CircleLayer(
               circles: [
+                //um location
                 CircleMarker(
                   point: LatLng(-7.958810, 112.615422),
                   radius: 80,
                   color: Color.fromRGBO(46, 39, 245, 0.2),
                   useRadiusInMeter: true,
                 ),
+                CircleMarker(
+                  point: LatLng(-7.97794, 112.638),
+                  radius: 80,
+                  color: Color.fromRGBO(46, 39, 245, 0.2),
+                  useRadiusInMeter: true,
+                ),
+              ],
+            ),
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                    strokeWidth: 4.0,
+                    points: _locationsTrack,
+                    color: Colors.cyan,
+                    borderColor: Colors.blueGrey),
               ],
             ),
             MarkerLayer(
               markers: [
                 Marker(
                   point: _myLocation,
-                  width: 80,
-                  height: 80,
-                  child: const FlutterLogo(),
+                  width: 24,
+                  height: 24,
+                  child: Image.asset('assets/icons/placeholder.png'),
                 ),
               ],
             ),
@@ -108,8 +150,8 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       ]),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          animatedMapController.animateTo(
-              dest: const LatLng(-7.958810, 112.615422), zoom: 18);
+          _animatedMapController.animateTo(
+              dest: const LatLng(-7.958810, 112.615422), zoom: zoomLevel);
         },
         tooltip: 'My Location',
         child: const Icon(Icons.my_location),
