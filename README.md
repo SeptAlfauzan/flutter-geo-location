@@ -1,4 +1,4 @@
-# geo_attendance
+# geo-location
 
 A new Flutter project.
 
