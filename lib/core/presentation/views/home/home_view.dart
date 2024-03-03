@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geo_attendance/core/presentation/views/home/providers/mosque_providers.dart';
+import 'package:geo_attendance/core/presentation/views/home/widgets/marker_tooltip.dart';
 import 'package:geo_attendance/core/utils/geo_locator.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -28,6 +29,7 @@ class _HomeViewState extends ConsumerState<HomeView>
     curve: Curves.easeInOut,
   );
   LatLng _myLocation = const LatLng(0, 0);
+  LatLng? _selectedMarkerLocation;
   List<LatLng> _locationsTrack = [];
   // ignore: unused_field
   late StreamSubscription<Position> _positionStream;
@@ -63,6 +65,13 @@ class _HomeViewState extends ConsumerState<HomeView>
       _locationsTrack = [..._locationsTrack, newLocation];
     });
     _animatedMapController.animateTo(dest: _myLocation, zoom: zoomLevel);
+  }
+
+  void onTapMarker({required LatLng markerLocation}) {
+    setState(() {
+      _selectedMarkerLocation = markerLocation;
+    });
+    _animatedMapController.animateTo(dest: markerLocation, zoom: zoomLevel);
   }
 
   @override
@@ -136,18 +145,31 @@ class _HomeViewState extends ConsumerState<HomeView>
                             ?.map(
                               (it) => Marker(
                                 point: LatLng(it.lat, it.lon),
-                                width: 24,
-                                height: 24,
-                                child: Column(
-                                  children: [
-                                    Image.asset('assets/icons/placeholder.png'),
-                                    Text(it.name)
-                                  ],
+                                width: 40,
+                                height: 40,
+                                child: GestureDetector(
+                                  onTap: () => onTapMarker(
+                                      markerLocation: LatLng(it.lat, it.lon)),
+                                  child: const Icon(
+                                    Icons.location_on,
+                                    size: 40,
+                                    color: Colors.blue,
+                                  ),
                                 ),
                               ),
                             )
                             .toList() ??
-                        [])
+                        []),
+                    if (_selectedMarkerLocation != null)
+                      Marker(
+                          width: 120,
+                          height: 48,
+                          alignment: Alignment.bottomCenter,
+                          point: _selectedMarkerLocation!,
+                          child: const MarkerToolTip(
+                            name:
+                                "Lorem Lorem Lorem LoremLoremLoremLoremLoremLorem",
+                          ))
                   ],
                 ),
               AsyncError(:final error) => Text('error: $error'),
