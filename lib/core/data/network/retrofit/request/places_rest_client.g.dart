@@ -21,23 +21,25 @@ class _PlacesRestClient implements PlacesRestClient {
   String? baseUrl;
 
   @override
-  Future<HttpResponse<LocationResponse>> getPlaces(
-    String category,
-    String filter,
-    int limit,
-    String apiKey,
-  ) async {
+  Future<HttpResponse<GetPlacesResponse>> getPlaces({
+    required String category,
+    required String filter,
+    required String bias,
+    required int limit,
+    required String apiKey,
+  }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'categories': category,
       r'filter': filter,
+      r'bias': bias,
       r'limit': limit,
       r'apiKey': apiKey,
     };
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<HttpResponse<LocationResponse>>(Options(
+        _setStreamType<HttpResponse<GetPlacesResponse>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -53,7 +55,7 @@ class _PlacesRestClient implements PlacesRestClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final value = LocationResponse.fromJson(_result.data!);
+    final value = GetPlacesResponse.fromJson(_result.data!);
     final httpResponse = HttpResponse(value, _result);
     return httpResponse;
   }

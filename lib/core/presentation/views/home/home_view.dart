@@ -4,20 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_attendance/core/presentation/views/home/providers/mosque_providers.dart';
 import 'package:geo_attendance/core/utils/geo_locator.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart';
 
-class HomeView extends StatefulWidget {
+class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key, required this.title});
   final String title;
 
   @override
-  State<HomeView> createState() => _HomeViewState();
+  ConsumerState<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
+class _HomeViewState extends ConsumerState<HomeView>
+    with TickerProviderStateMixin {
   final zoomLevel = 16.0;
   late final _animatedMapController = AnimatedMapController(
     vsync: this,
@@ -26,6 +29,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   );
   LatLng _myLocation = const LatLng(0, 0);
   List<LatLng> _locationsTrack = [];
+  // ignore: unused_field
   late StreamSubscription<Position> _positionStream;
 
   @override
@@ -63,6 +67,8 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final nearestMosque = ref.watch(nearestMosqueProvider);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -117,16 +123,36 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                     borderColor: Colors.blueGrey),
               ],
             ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: _myLocation,
-                  width: 24,
-                  height: 24,
-                  child: Image.asset('assets/icons/placeholder.png'),
+            switch (nearestMosque) {
+              AsyncData(:final value) => MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _myLocation,
+                      width: 24,
+                      height: 24,
+                      child: Image.asset('assets/icons/placeholder.png'),
+                    ),
+                    ...(value.data
+                            ?.map(
+                              (it) => Marker(
+                                point: LatLng(it.lat, it.lon),
+                                width: 24,
+                                height: 24,
+                                child: Column(
+                                  children: [
+                                    Image.asset('assets/icons/placeholder.png'),
+                                    Text(it.name)
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList() ??
+                        [])
+                  ],
                 ),
-              ],
-            ),
+              AsyncError(:final error) => Text('error: $error'),
+              _ => const Text('loading'),
+            },
             const RichAttributionWidget(
               popupInitialDisplayDuration: Duration(seconds: 5),
               animationConfig: ScaleRAWA(),
@@ -146,7 +172,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
               ],
             ),
           ],
-        )
+        ),
       ]),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
