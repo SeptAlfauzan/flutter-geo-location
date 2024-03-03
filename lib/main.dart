@@ -29,7 +29,7 @@ class GeoAttendance extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
-      home: const HomeView(title: 'Geo Attendance'),
+      home: const HomeView(title: 'No Name Yet'),
     );
   }
 }

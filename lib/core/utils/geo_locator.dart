@@ -39,7 +39,7 @@ LocationSettings getBackgroundLocationSetting() {
 }
 
 StreamSubscription<Position> getStreamPositionSubscription(
-    {Function(Position?)? onUpdatePosition}) {
+    {Function(Position?)? onUpdatePosition, Function(Exception)? onError}) {
   return Geolocator.getPositionStream(
           locationSettings: getBackgroundLocationSetting())
       .listen((Position? position) {

@@ -67,7 +67,7 @@ class _HomeViewState extends ConsumerState<HomeView>
 
   @override
   Widget build(BuildContext context) {
-    final nearestMosque = ref.watch(nearestMosqueProvider);
+    final nearestMosque = ref.watch(streamNearestMosqueProvider);
 
     return Scaffold(
       appBar: AppBar(
