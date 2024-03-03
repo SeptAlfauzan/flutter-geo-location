@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_attendance/core/domain/entities/places/places_entity.dart';
 import 'package:geo_attendance/core/presentation/views/home/providers/mosque_providers.dart';
 import 'package:geo_attendance/core/presentation/views/home/widgets/marker_tooltip.dart';
 import 'package:geo_attendance/core/utils/geo_locator.dart';
@@ -29,7 +30,7 @@ class _HomeViewState extends ConsumerState<HomeView>
     curve: Curves.easeInOut,
   );
   LatLng _myLocation = const LatLng(0, 0);
-  LatLng? _selectedMarkerLocation;
+  PlacesEntity? _selectedMarkerPlace;
   List<LatLng> _locationsTrack = [];
   // ignore: unused_field
   late StreamSubscription<Position> _positionStream;
@@ -67,11 +68,12 @@ class _HomeViewState extends ConsumerState<HomeView>
     _animatedMapController.animateTo(dest: _myLocation, zoom: zoomLevel);
   }
 
-  void onTapMarker({required LatLng markerLocation}) {
+  void onTapMarker({required PlacesEntity markerPlaceEntity}) {
     setState(() {
-      _selectedMarkerLocation = markerLocation;
+      _selectedMarkerPlace = markerPlaceEntity;
     });
-    _animatedMapController.animateTo(dest: markerLocation, zoom: zoomLevel);
+    final latLng = LatLng(markerPlaceEntity.lat, markerPlaceEntity.lon);
+    _animatedMapController.animateTo(dest: latLng, zoom: zoomLevel);
   }
 
   @override
@@ -148,8 +150,8 @@ class _HomeViewState extends ConsumerState<HomeView>
                                 width: 40,
                                 height: 40,
                                 child: GestureDetector(
-                                  onTap: () => onTapMarker(
-                                      markerLocation: LatLng(it.lat, it.lon)),
+                                  onTap: () =>
+                                      onTapMarker(markerPlaceEntity: it),
                                   child: const Icon(
                                     Icons.location_on,
                                     size: 40,
@@ -160,15 +162,17 @@ class _HomeViewState extends ConsumerState<HomeView>
                             )
                             .toList() ??
                         []),
-                    if (_selectedMarkerLocation != null)
+                    if (_selectedMarkerPlace != null)
                       Marker(
                           width: 120,
                           height: 48,
                           alignment: Alignment.bottomCenter,
-                          point: _selectedMarkerLocation!,
-                          child: const MarkerToolTip(
-                            name:
-                                "Lorem Lorem Lorem LoremLoremLoremLoremLoremLorem",
+                          point: LatLng(_selectedMarkerPlace!.lat,
+                              _selectedMarkerPlace!.lon),
+                          child: MarkerToolTip(
+                            name: _selectedMarkerPlace!.name.isEmpty
+                                ? _selectedMarkerPlace!.addressLine1
+                                : _selectedMarkerPlace!.name,
                           ))
                   ],
                 ),
