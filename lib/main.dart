@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geo_attendance/core/di/locator.dart';
 import 'package:geo_attendance/core/presentation/views/home/home_view.dart';
+import 'package:geo_attendance/core/utils/text_theme.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -26,6 +27,7 @@ class GeoAttendance extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Geo Attendance',
       theme: ThemeData(
+        textTheme: myTextTheme,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
